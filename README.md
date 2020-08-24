@@ -27,7 +27,7 @@ How to install the package
 --------------------------
 ```
 # Clone the repository
-> git clone https://github.com/nic-at/nic_crawler_analysis.git
+> git clone https://github.com/nic-at/nic-crawler-analysis.git
 
 # Change into the directory
 > cd nic_crawler_analysis
