@@ -1,0 +1,6 @@
+venv*/
+nic_crawler_analysis.egg-info/
+.noseids
+build/
+dist/
+__pycache__/
