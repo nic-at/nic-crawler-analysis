@@ -100,7 +100,8 @@ def extract_text_from_html(
     punctuation) and without non alphabetic characters.
 
     bs4.BeautifulSoup.get_text is used for parsing. It removes HTML comments,
-    scripts and styles prior to extracting the text.
+    scripts and styles prior to extracting the text. Only text in the body is
+    returned.
 
     Parameters
     ----------

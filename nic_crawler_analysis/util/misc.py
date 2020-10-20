@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import sys
 import re
 import posixpath
 
@@ -148,3 +149,9 @@ def analyze_path(path):
     result["version_number"] = _detect_version_numbers(path_components)
 
     return result
+
+
+def error(s, exit_code=1):
+    """Writes an error message to std err and exits"""
+    sys.stderr.write("ERROR: %s\n" % s)
+    sys.exit(exit_code)

@@ -17,6 +17,10 @@ setup(
         'future',
         'typing',
         'langdetect',
-        'beautifulsoup4'
+        'beautifulsoup4',
+        'tldextract'
+    ],
+    scripts=[
+        'nic_crawler_analysis/scripts/nca_analyze_html'
     ]
 )

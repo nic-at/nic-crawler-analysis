@@ -1,15 +1,15 @@
 API Documentation
 =================
 
-Building requires some additional softwre packages to be
-installed. To install them run the following command from
-the root folder of the package:
+Building the documentation requires some additional softwre packages to be
+installed. To install them run the following command from the root folder
+of the package:
 ::
 
     pip install -r requirements_docs.txt
 
 
-To build the API documentation you can then run 
+To build the API documentation run
 ::
 
     cd docs/

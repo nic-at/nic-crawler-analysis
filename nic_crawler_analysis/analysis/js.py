@@ -41,10 +41,10 @@ def analyze_js_source(domain, input_):
 
     * type
         one of 'inline-js', 'inline-unknown', 'inline-json', 'include-local',
-        or 'include-external'
-    * src *(for type == include-\*)*
+        'include-external', or 'include' (only if domain is None)
+    * src *(for type == include\*)*
         the full included path
-    * src_path *(for type == include-\*)*
+    * src_path *(for type == include\*)*
         relative path to included resource
     * 'src_domain' *(for type == include-external)*
         domain from which resource is included
@@ -54,10 +54,12 @@ def analyze_js_source(domain, input_):
 
     Parameters
     ----------
-    domain : str
+    domain : str or None
         Domain the tags have been scraped from. Used to detect whether scripts
         are local or external includes. Expects the domain to be given up to
-        the second level (e.g. domain="nic.at").
+        the second level (e.g. domain="nic.at"). If domain is None, script
+        tags that load from an absolute path are marked as "include", since
+        in this case external and local includes can not be distinguished.
     input_ : list of (dict,str)
         List of script tags to analyze where the dictionary contains
         the attributes of the tag and the str the text of the tag.
@@ -82,11 +84,14 @@ def analyze_js_source(domain, input_):
                 if p_url.netloc:
                     o_tld = tld_extract(p_url.netloc)
                     script_domain = o_tld.domain + "." + o_tld.suffix
-                    if script_domain == domain:
-                        result["type"] = "include-local"
-                    else:
+                    if domain is None:
+                        result["type"] = "include"
+                        result["src_domain"] = script_domain
+                    elif script_domain != domain:
                         result["type"] = "include-external"
                         result["src_domain"] = script_domain
+                    else:
+                        result["type"] = "include-local"
                 else:
                     if result["src_path"].startswith("./"):
                         result["src_path"] = \
@@ -107,9 +112,9 @@ def analyze_js_source(domain, input_):
                 else:
                     result["type"] = "inline-unknown"
             sources.append(result)
-    except TypeError:
+    except TypeError as e:
         raise ValueError("could not iterate over input_ "
-                         "- expected list of tuples (dict,str) - %s")
+                         "- expected list of tuples (dict,str) - %s" % str(e))
     return sources
 
 

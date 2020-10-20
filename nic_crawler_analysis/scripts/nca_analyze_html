@@ -1,0 +1,161 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+from __future__ import print_function
+from future.standard_library import hooks
+import sys
+import json
+import argparse
+
+with hooks():
+    from urllib.request import urlopen
+    from urllib.error import HTTPError
+
+from nic_crawler_analysis.util.misc import error
+from nic_crawler_analysis.parse.html import (
+    parse_html,
+    extract_text_from_html,
+    extract_js_from_html,
+    extract_noscript_from_html
+)
+from nic_crawler_analysis.analysis.lang_detect import (
+    detect_languages,
+    detect_language_blocks
+)
+from nic_crawler_analysis.analysis.js import analyze_js_source, analyze_js_path
+
+
+def do_lang_detect(bs, result):
+    result['text'] = extract_text_from_html(bs)
+    result['languages'] = detect_languages(result['text'])
+    result['language_blocks'] = detect_language_blocks(result['text'])
+
+
+def do_script_detect(bs, result, domain):
+    result['noscript_blocks'] = extract_noscript_from_html(bs)
+
+    script_blocks = extract_js_from_html(bs)
+    script_sources = analyze_js_source(domain, script_blocks)
+
+    for i, _block in enumerate(script_sources):
+        if "src_path" in _block:
+            _path_analysis = analyze_js_path(_block["src_path"])
+            for _k, _v in _path_analysis.items():
+                _block[_k] = _v
+
+    result["script_blocks"] = script_sources
+
+
+def run(pars):
+    # prepare the results dictionary
+    result = {}
+    # Get the input stream
+    if pars.htmlfile:
+        sys.stderr.write("- Fetching content from file %s\n" % pars.htmlfile)
+        result['source'] = 'htmlfile'
+        result['inputfile'] = pars.htmlfile
+        try:
+            f = open(pars.htmlfile, encoding=pars.htmlfile_encoding)
+            content = f.read()
+        except IOError as e:
+            error("Could not open file %s - %s" % (pars.htmlfile, str(e)))
+    elif pars.url:
+        sys.stderr.write("- Fetching content from URL %s\n" % pars.url)
+        result['source'] = 'url'
+        result['inputurl'] = pars.url
+        try:
+            resource = urlopen(pars.url)
+            content = resource.read().decode(resource.headers.get_content_charset())
+        except (HTTPError, ValueError) as e:
+            error("could not fetch from URL %s - "
+                  "%s (did you forget https://?)" % (pars.url, str(e)))
+    else:
+        sys.stderr.write("- Fetching content from stdin\n")
+        result['source'] = 'stdin'
+        input_ = sys.stdin
+        content = input_.read()
+
+    if pars.include_content:
+        result['content'] = content
+
+    bs = parse_html(content)
+
+    if pars.do_lang_detect:
+        do_lang_detect(bs, result)
+
+    if pars.do_script_detect:
+        do_script_detect(bs, result, pars.domain)
+
+    print(json.dumps(result, indent=4, sort_keys=True))
+
+
+def get_argparser():
+    argparser = argparse.ArgumentParser(
+        description="Analyze a HTML page and return the analysis "
+                    "as a json object"
+    )
+
+    argparser.add_argument(
+        '-f',
+        '--htmlfile',
+        type=str,
+        help="file where html is read from. If not set, the HTML file "
+             "is read from stdin"
+    )
+
+    argparser.add_argument(
+        '-u',
+        '--url',
+        type=str,
+        help="URL from which HTML code is fetched",
+        default=None
+    )
+
+    argparser.add_argument(
+        '--no-lang-detect',
+        help='disable language detection',
+        dest='do_lang_detect',
+        default=True,
+        action='store_false'
+    )
+
+    argparser.add_argument(
+        '--no-script-detect',
+        help='disable script tag detection',
+        dest='do_script_detect',
+        default=True,
+        action='store_false'
+    )
+
+    argparser.add_argument(
+        '--domain',
+        help="specify the domain the HTML is from. Used in script analysis",
+        default=None,
+        type=str
+    )
+
+    argparser.add_argument(
+        '--htmlfile-encoding',
+        help="specify the domain the encoding of htmlfile. Default is utf-8",
+        default='utf-8',
+        type=str
+    )
+
+    argparser.add_argument(
+        '--include-content',
+        help="include the original content under the key 'content'",
+        action='store_true'
+    )
+
+    return argparser
+
+
+def check_parsed_args(pars):
+    if pars.htmlfile and pars.url:
+        error("only one of --htmlfile and --url can be used at the same time")
+
+
+if __name__ == '__main__':
+    argparser = get_argparser()
+    pars = argparser.parse_args()
+    check_parsed_args(pars)
+    run(pars)

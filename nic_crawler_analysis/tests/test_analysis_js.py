@@ -20,6 +20,13 @@ JS_SECTIONS = [
         ({'src': 'https://subdomain.example.com/include_local.js'}, None),
         ({'src': 'https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js'}, None),
         ({'type': 'text/whatever'}, '\n            some other code\n        '),
+    ]),
+    (None, [
+        ({'type': 'text/javascript'}, '\n            document.write("Hello World!")\n        '),
+        ({'src': './include.js'}, None),
+        ({'src': 'https://subdomain.example.com/include_local.js'}, None),
+        ({'src': 'https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js'}, None),
+        ({'type': 'text/whatever'}, '\n            some other code\n        '),
     ])
 ]
 
@@ -29,6 +36,13 @@ ANALYZE_JS_FROM_SECTIONS_RESULT = [
         {"type": 'include-local', "src_path": '/include.js', "src":"./include.js"},
         {"type": 'include-local', "src_path": '/include_local.js', "src":'https://subdomain.example.com/include_local.js'},
         {"type": 'include-external', "src_domain": "googleapis.com", "src_path": "/ajax/libs/jquery/3.5.1/jquery.min.js", "src":"https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"},
+        {"type": 'inline-unknown', "content":"\n            some other code\n        "},
+    ],
+    [
+        {"type": 'inline-js', "content": '\n            document.write("Hello World!")\n        '},
+        {"type": 'include-local', "src_path": '/include.js', "src":"./include.js"},
+        {"type": 'include', "src_domain": "example.com", "src_path": '/include_local.js', "src":'https://subdomain.example.com/include_local.js'},
+        {"type": 'include', "src_domain": "googleapis.com", "src_path": "/ajax/libs/jquery/3.5.1/jquery.min.js", "src":"https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"},
         {"type": 'inline-unknown', "content":"\n            some other code\n        "},
     ]
 ]
